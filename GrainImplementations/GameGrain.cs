@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 using Orleans;
+using Orleans.Streams;
 
 using GrainInterfaces.Game;
+using GrainInterfaces.Game.Messages;
 using GrainInterfaces.Player;
 
 namespace GrainImplementations
@@ -14,6 +16,8 @@ namespace GrainImplementations
 	public class GameGrain : Grain, IGame
 	{
 		private readonly ILogger logger;
+
+		private IAsyncStream<GameMessage> stream;
 
 		private GameInfo info;
 
@@ -24,11 +28,16 @@ namespace GrainImplementations
 
 		public override Task OnActivateAsync()
 		{
-			info = new GameInfo { Key = this.GetPrimaryKey(), Players = new List<IPlayer>() };
+			Guid gameId = this.GetPrimaryKey();
+			info = new GameInfo { Key = gameId, Players = new List<IPlayer>() };
+
+			IStreamProvider streamProvider = GetStreamProvider("GameStream");
+			stream = streamProvider.GetStream<GameMessage>(gameId, null);
+
 			return base.OnActivateAsync();
 		}
 
-		public Task Join(IPlayer player)
+		public async Task Join(IPlayer player)
 		{
 			logger.LogInformation($"Player {player.GetPrimaryKeyString()} joined the game");
 
@@ -42,10 +51,10 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Game {info.Key} now has {info.Players.Count} players");
 
-			return Task.CompletedTask;
+			await stream.OnNextAsync(new PlayerJoinedMessage() { PlayerId = player.GetPrimaryKeyString() });
 		}
 
-		public Task Leave(IPlayer player)
+		public async Task Leave(IPlayer player)
 		{
 			logger.LogInformation($"Player {player.GetPrimaryKeyString()} left the game");
 
@@ -53,7 +62,7 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Game {info.Key} now has {info.Players.Count} players");
 
-			return Task.CompletedTask;
+			await stream.OnNextAsync(new PlayerLeftMessage() { PlayerId = player.GetPrimaryKeyString() });
 		}
 	}
 }

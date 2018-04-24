@@ -2,13 +2,19 @@
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 using Orleans;
 using Orleans.Runtime;
 using Orleans.Configuration;
+using Orleans.Hosting;
+using Orleans.Streams;
 
 using GrainInterfaces.Game;
+using GrainInterfaces.Game.Messages;
 using GrainInterfaces.Player;
+
+using Client.Observers;
 
 // Client sample taken from
 // https://github.com/dotnet/orleans/blob/master/Samples/2.0/HelloWorld/src/OrleansClient/Program.cs
@@ -59,10 +65,13 @@ namespace Client
 						})
 						.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IGame).Assembly).WithReferences())
 						.ConfigureLogging(logging => logging.AddConsole())
+						.AddSimpleMessageStreamProvider("GameStream")
 						.Build();
 
 					await client.Connect();
+
 					Console.WriteLine("Client successfully connect to silo host");
+
 					break;
 				}
 				catch (SiloUnavailableException)
@@ -82,9 +91,20 @@ namespace Client
 
 		private static async Task DoClientWork(IClusterClient client)
 		{
+			// Create a player
 			string playerId = "nullorvoid";
-			IPlayer player = client.GetGrain<IPlayer>(playerId);
-			IGame game = client.GetGrain<IGame>(Guid.Empty);
+			IPlayer player = client.GetGrain<IPlayer>(playerId + Guid.NewGuid().ToString());
+
+			// Connect to a game
+			// TODO: Write a game creation grain for setting this up
+			Guid gameId = Guid.Empty;
+			IGame game = client.GetGrain<IGame>(gameId);
+
+			// Register to the game stream using the game id
+			// Streams are identified by stream IDs, which are just logical names comprised of GUIDs and strings.
+			IStreamProvider streamProvider = client.GetStreamProvider("GameStream");
+			IAsyncStream<GameMessage> stream = streamProvider.GetStream<GameMessage>(gameId, null);
+			StreamSubscriptionHandle<GameMessage> handle = await stream.SubscribeAsync(new GameStreamObserver(client.ServiceProvider.GetService<ILoggerFactory>().CreateLogger("GameStreamObserver")));
 
 			// For testing we're going to throw it all in a giant try catch >.<
 			// TODO: put in a testing framework.
@@ -99,6 +119,9 @@ namespace Client
 			{
 				Console.WriteLine(e.Message);
 			}
+
+			// unsubscribe from the stream to clean up
+			await handle.UnsubscribeAsync();
 
 			Console.WriteLine("Work Completed");
 		}

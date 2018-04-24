@@ -33,6 +33,13 @@ namespace Server
 				.Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
 				.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GameGrain).Assembly).WithReferences())
 				.ConfigureLogging(logging => logging.AddConsole())
+				// PubSubStore is a special store that manages pub sub of streams
+				// For development memory is used however it should be moved to a persistent
+				// data store in production.
+				// Orleans also Gcs resources from unused streams, this will probably be applicable
+				// as we will use it for game streams that should be cleaned up after a game has finished
+				.AddMemoryGrainStorage("PubSubStore")
+				.AddSimpleMessageStreamProvider("GameStream")
 				.Build();
 
 			Task.Run(StartSilo);
