@@ -51,6 +51,7 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Game {info.Key} now has {info.Players.Count} players");
 
+			// TODO: This can fail, update with correct error handling
 			await stream.OnNextAsync(new PlayerJoinedMessage() { PlayerId = player.GetPrimaryKeyString() });
 		}
 
@@ -62,6 +63,7 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Game {info.Key} now has {info.Players.Count} players");
 
+			// TODO: This can fail, update with correct error handling
 			await stream.OnNextAsync(new PlayerLeftMessage() { PlayerId = player.GetPrimaryKeyString() });
 		}
 	}
