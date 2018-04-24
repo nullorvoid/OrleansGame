@@ -7,7 +7,8 @@ using Orleans;
 using Orleans.Runtime;
 using Orleans.Configuration;
 
-using GrainInterfaces;
+using GrainInterfaces.Game;
+using GrainInterfaces.Player;
 
 // Client sample taken from
 // https://github.com/dotnet/orleans/blob/master/Samples/2.0/HelloWorld/src/OrleansClient/Program.cs
@@ -81,9 +82,24 @@ namespace Client
 
 		private static async Task DoClientWork(IClusterClient client)
 		{
+			string playerId = "nullorvoid";
+			IPlayer player = client.GetGrain<IPlayer>(playerId);
 			IGame game = client.GetGrain<IGame>(Guid.Empty);
-			await game.Join("robtowell");
-			await game.Leave("robtowell");
+
+			// For testing we're going to throw it all in a giant try catch >.<
+			// TODO: put in a testing framework.
+			try
+			{
+				await player.SetName("Rob Towell");
+				await game.Join(player);
+				await Task.Delay(4000);
+				await game.Leave(player);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+
 			Console.WriteLine("Work Completed");
 		}
 	}
