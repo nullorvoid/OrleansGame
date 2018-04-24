@@ -9,4 +9,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.0.1" />
     <PackageReference Include="Microsoft.Orleans.Server" Version="2.0.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GrainImplementations\GrainImplementations.csproj" />
+  </ItemGroup>
 </Project>

@@ -1,13 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
-using Orleans;
-using Orleans.Configuration;
-using Orleans.Hosting;
-using System;
+﻿using System;
 using System.Net;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.Logging;
+
+using Orleans;
+using Orleans.Configuration;
+using Orleans.Hosting;
+
+using GrainImplementations;
 
 // Editor Silo configuration and start up from
 // https://github.com/dotnet/orleans/blob/master/Samples/2.0/docker-aspnet-core/Silo/Program.cs
@@ -28,6 +31,7 @@ namespace Server
 					options.ServiceId = "game";
 				})
 				.Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
+				.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GameGrain).Assembly).WithReferences())
 				.ConfigureLogging(logging => logging.AddConsole())
 				.Build();
 

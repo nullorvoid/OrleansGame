@@ -1,9 +1,13 @@
-﻿using Orleans;
-using Orleans.Runtime;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+
 using Microsoft.Extensions.Logging;
+
+using Orleans;
+using Orleans.Runtime;
 using Orleans.Configuration;
+
+using GrainInterfaces;
 
 // Client sample taken from
 // https://github.com/dotnet/orleans/blob/master/Samples/2.0/HelloWorld/src/OrleansClient/Program.cs
@@ -52,6 +56,7 @@ namespace Client
 							options.ClusterId = "dev";
 							options.ServiceId = "game";
 						})
+						.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IGame).Assembly).WithReferences())
 						.ConfigureLogging(logging => logging.AddConsole())
 						.Build();
 
@@ -76,8 +81,10 @@ namespace Client
 
 		private static async Task DoClientWork(IClusterClient client)
 		{
-			// TODO: Add Test client work
-			Console.WriteLine("No work to do");
+			IGame game = client.GetGrain<IGame>(Guid.Empty);
+			await game.Join("robtowell");
+			await game.Leave("robtowell");
+			Console.WriteLine("Work Completed");
 		}
 	}
 }
