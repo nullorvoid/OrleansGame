@@ -13,6 +13,7 @@ using Orleans.Streams;
 using GrainInterfaces.Game;
 using GrainInterfaces.Game.Messages;
 using GrainInterfaces.Player;
+using GrainInterfaces.GameAction.Messages;
 
 using Client.Observers;
 
@@ -112,7 +113,9 @@ namespace Client
 			{
 				await player.SetName("Rob Towell");
 				await game.Join(player);
-				await Task.Delay(4000);
+				await Task.Delay(2000);
+				await game.ProcessActionMessage(player, new MoveMessage() { PlayerId = player.GetPrimaryKeyString(), Direction = "left"});
+				await Task.Delay(2000);
 				await game.Leave(player);
 			}
 			catch (Exception e)

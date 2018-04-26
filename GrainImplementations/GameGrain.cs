@@ -9,6 +9,8 @@ using Orleans.Streams;
 
 using GrainInterfaces.Game;
 using GrainInterfaces.Game.Messages;
+using GrainInterfaces.GameAction;
+using GrainInterfaces.GameAction.Messages;
 using GrainInterfaces.Player;
 
 namespace GrainImplementations
@@ -21,6 +23,8 @@ namespace GrainImplementations
 
 		private GameInfo info;
 
+		private IGameActionMessageHandler actionMessageHandler;
+
 		public GameGrain(ILogger<GameGrain> logger)
 		{
 			this.logger = logger;
@@ -28,11 +32,16 @@ namespace GrainImplementations
 
 		public override Task OnActivateAsync()
 		{
+			// Create game info with players to be stored here
 			Guid gameId = this.GetPrimaryKey();
 			info = new GameInfo { Key = gameId, Players = new List<IPlayer>() };
 
+			// Get game stream with no namespace for general messages
 			IStreamProvider streamProvider = GetStreamProvider("GameStream");
 			stream = streamProvider.GetStream<GameMessage>(gameId, null);
+
+			// Get game message handler which will interface with the state
+			actionMessageHandler = GrainFactory.GetGrain<IGameActionMessageHandler>(gameId);
 
 			return base.OnActivateAsync();
 		}
@@ -53,6 +62,11 @@ namespace GrainImplementations
 
 			// TODO: This can fail, update with correct error handling
 			await stream.OnNextAsync(new PlayerJoinedMessage() { PlayerId = player.GetPrimaryKeyString() });
+		}
+
+		public async Task ProcessActionMessage(IPlayer player, GameActionMessage message)
+		{
+			await actionMessageHandler.ProcessMessage(message);
 		}
 
 		public async Task Leave(IPlayer player)
