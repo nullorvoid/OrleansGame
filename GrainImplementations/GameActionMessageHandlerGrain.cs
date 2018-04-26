@@ -40,9 +40,9 @@ namespace GrainImplementations
 			return base.OnActivateAsync();
 		}
 
-        public async Task ProcessMessage(GameActionMessage message)
-        {
-            Type type = message.GetType();
+		public async Task ProcessMessage(GameActionMessage message)
+		{
+			Type type = message.GetType();
 			if (!handlers.ContainsKey(type))
 			{
 				this.logger.LogInformation($"GameActionMessageHandler message type not recognised");
@@ -53,12 +53,12 @@ namespace GrainImplementations
 			await handler(message);
 
 			this.logger.LogInformation($"GameActionMessage Processed: {message}");
-        }
+		}
 
 		private void BuildHandlers(Dictionary<Type, Func<GameActionMessage, Task>> handlers)
 		{
 			handlers.Add(typeof(MoveMessage), async (msg) => await state.PlayerMove(msg));
 			handlers.Add(typeof(ShootMessage), async (msg) => await state.PlayerShoot(msg));
 		}
-    }
+	}
 }

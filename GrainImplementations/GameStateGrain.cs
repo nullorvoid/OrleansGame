@@ -12,41 +12,41 @@ using GrainInterfaces.GameAction.Messages;
 
 namespace GrainImplementations
 {
-    public class GameStateGrain : Grain, IGameState
-    {
-        private readonly ILogger logger;
+	public class GameStateGrain : Grain, IGameState
+	{
+		private readonly ILogger logger;
 
-        public GameStateGrain(ILogger<GameGrain> logger)
-        {
-            this.logger = logger;
-        }
+		public GameStateGrain(ILogger<GameGrain> logger)
+		{
+			this.logger = logger;
+		}
 
-        public Task PlayerMove(GameActionMessage message)
-        {
-            MoveMessage moveMsg = message as MoveMessage;
+		public Task PlayerMove(GameActionMessage message)
+		{
+			MoveMessage moveMsg = message as MoveMessage;
 
-            if (moveMsg == null)
-            {
-                throw new Exception($"Player move recieved a message that was not of type {typeof(MoveMessage)} but was {message.GetType()}");
-            }
+			if (moveMsg == null)
+			{
+				throw new Exception($"Player move recieved a message that was not of type {typeof(MoveMessage)} but was {message.GetType()}");
+			}
 
-            logger.LogInformation($"Player {moveMsg.PlayerId} moved in direction {moveMsg.Direction}");
+			logger.LogInformation($"Player {moveMsg.PlayerId} moved in direction {moveMsg.Direction}");
 
-            return Task.CompletedTask;
-        }
+			return Task.CompletedTask;
+		}
 
-        public Task PlayerShoot(GameActionMessage message)
-        {
-            ShootMessage shootMsg = message as ShootMessage;
+		public Task PlayerShoot(GameActionMessage message)
+		{
+			ShootMessage shootMsg = message as ShootMessage;
 
-            if (shootMsg == null)
-            {
-                throw new Exception($"Player shoot recieved a message that was not of type {typeof(ShootMessage)} but was {message.GetType()}");
-            }
+			if (shootMsg == null)
+			{
+				throw new Exception($"Player shoot recieved a message that was not of type {typeof(ShootMessage)} but was {message.GetType()}");
+			}
 
-            logger.LogInformation($"Player {shootMsg.PlayerId} shot in direction {shootMsg.Direction}");
+			logger.LogInformation($"Player {shootMsg.PlayerId} shot in direction {shootMsg.Direction}");
 
-            return Task.CompletedTask;
-        }
-    }
+			return Task.CompletedTask;
+		}
+	}
 }
