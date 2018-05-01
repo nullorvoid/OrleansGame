@@ -3,12 +3,11 @@ using System.Collections.Generic;
 
 using Orleans.Concurrency;
 
-namespace GrainInterfaces.GameAction.Messages
+namespace GrainInterfaces.Game.Messages.Setup
 {
 	[Immutable]
-	public class ShootMessage : GameActionMessage
+	public class PlayerJoinedMessage : GameMessage
 	{
 		public string PlayerId { get; set; }
-		public string Direction { get; set; }
 	}
 }

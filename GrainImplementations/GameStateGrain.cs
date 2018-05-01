@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Streams;
 
-using GrainInterfaces.GameState;
-using GrainInterfaces.GameAction.Messages;
+using GrainInterfaces.Game;
+using GrainInterfaces.Game.Messages;
+using GrainInterfaces.Game.Messages.Actions;
 
 namespace GrainImplementations
 {
@@ -16,12 +17,25 @@ namespace GrainImplementations
 	{
 		private readonly ILogger logger;
 
+		private IAsyncStream<GameMessage> stream;
+
 		public GameStateGrain(ILogger<GameGrain> logger)
 		{
 			this.logger = logger;
 		}
 
-		public Task PlayerMove(GameActionMessage message)
+		public override Task OnActivateAsync()
+		{
+			Guid gameId = this.GetPrimaryKey();
+
+			// Get game stream with no namespace for general messages
+			IStreamProvider streamProvider = GetStreamProvider("GameStream");
+			stream = streamProvider.GetStream<GameMessage>(gameId, "actions");
+
+			return base.OnActivateAsync();
+		}
+
+		public async Task PlayerMove(GameMessage message)
 		{
 			MoveMessage moveMsg = message as MoveMessage;
 
@@ -32,10 +46,10 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Player {moveMsg.PlayerId} moved in direction {moveMsg.Direction}");
 
-			return Task.CompletedTask;
+			await stream.OnNextAsync(message);
 		}
 
-		public Task PlayerShoot(GameActionMessage message)
+		public async Task PlayerShoot(GameMessage message)
 		{
 			ShootMessage shootMsg = message as ShootMessage;
 
@@ -46,7 +60,7 @@ namespace GrainImplementations
 
 			logger.LogInformation($"Player {shootMsg.PlayerId} shot in direction {shootMsg.Direction}");
 
-			return Task.CompletedTask;
+			await stream.OnNextAsync(message);
 		}
 	}
 }

@@ -12,8 +12,8 @@ using Orleans.Streams;
 
 using GrainInterfaces.Game;
 using GrainInterfaces.Game.Messages;
+using GrainInterfaces.Game.Messages.Actions;
 using GrainInterfaces.Player;
-using GrainInterfaces.GameAction.Messages;
 
 using Client.Observers;
 
@@ -104,8 +104,11 @@ namespace Client
 			// Register to the game stream using the game id
 			// Streams are identified by stream IDs, which are just logical names comprised of GUIDs and strings.
 			IStreamProvider streamProvider = client.GetStreamProvider("GameStream");
-			IAsyncStream<GameMessage> stream = streamProvider.GetStream<GameMessage>(gameId, null);
-			StreamSubscriptionHandle<GameMessage> handle = await stream.SubscribeAsync(new GameStreamObserver(client.ServiceProvider.GetService<ILoggerFactory>().CreateLogger("GameStreamObserver")));
+			IAsyncStream<GameMessage> gameStream = streamProvider.GetStream<GameMessage>(gameId, "game");
+			StreamSubscriptionHandle<GameMessage> handleGame = await gameStream.SubscribeAsync(new GameStreamObserver(client.ServiceProvider.GetService<ILoggerFactory>().CreateLogger("GameStreamObserver")));
+
+			IAsyncStream<GameMessage> actionStream = streamProvider.GetStream<GameMessage>(gameId, "actions");
+			StreamSubscriptionHandle<GameMessage> handleActions = await actionStream.SubscribeAsync(new GameStreamActionObserver(client.ServiceProvider.GetService<ILoggerFactory>().CreateLogger("GameStreamActionObserver")));
 
 			// For testing we're going to throw it all in a giant try catch >.<
 			// TODO: put in a testing framework.
@@ -114,7 +117,7 @@ namespace Client
 				await player.SetName("Rob Towell");
 				await game.Join(player);
 				await Task.Delay(2000);
-				await game.ProcessActionMessage(player, new MoveMessage() { PlayerId = player.GetPrimaryKeyString(), Direction = "left"});
+				await game.ProcessActionMessage(player, new MoveMessage() { PlayerId = player.GetPrimaryKeyString(), Direction = "left" });
 				await Task.Delay(2000);
 				await game.Leave(player);
 			}
@@ -124,7 +127,8 @@ namespace Client
 			}
 
 			// unsubscribe from the stream to clean up
-			await handle.UnsubscribeAsync();
+			await handleGame.UnsubscribeAsync();
+			await handleActions.UnsubscribeAsync();
 
 			Console.WriteLine("Work Completed");
 		}
