@@ -1,0 +1,51 @@
+---
+version: "3.2"
+services:
+    reverse-proxy:
+        image: traefik # The official Traefik docker image
+        command: --api --docker # Enables the web UI and tells Træfik to listen to docker
+        ports:
+        - "80:80"     # The HTTP port
+        - "8080:8080" # The Web UI (enabled by --api)
+        volumes:
+        - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+    orleans:
+        build:
+            context: .
+            dockerfile: Dockerfile-OrleansServer
+        restart: always
+        environment:
+            DB_SERVICE: db
+            POSTGRES_USER: "${POSTGRES_USER}"
+            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+            POSTGRES_DB: "${POSTGRES_DB}"
+        depends_on:
+            - db
+    web:
+        build:
+            context: .
+            dockerfile: Dockerfile-WebServer
+        restart: always
+        environment:
+            DB_SERVICE: db
+            POSTGRES_USER: "${POSTGRES_USER}"
+            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+            POSTGRES_DB: "${POSTGRES_DB}"
+        labels:
+            - "traefik.frontend.rule=Host:web.docker.localhost"
+    db:
+        build:
+            context: .
+            dockerfile: Dockerfile-Database
+        restart: always
+        environment:
+            POSTGRES_USER: "${POSTGRES_USER}"
+            POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+            POSTGRES_DB: "${POSTGRES_DB}"
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8070:8080
+        labels:
+            - "traefik.frontend.rule=Host:dbadmin.docker.localhost"

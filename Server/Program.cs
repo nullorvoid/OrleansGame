@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Clustering.AdoNet;
 
 using GrainImplementations;
 
@@ -23,16 +24,33 @@ namespace Server
 
 		static void Main(string[] args)
 		{
+			IPHostEntry hostEntry = Dns.GetHostEntry(Environment.GetEnvironmentVariable("DB_SERVICE"));
+
+			IPAddress ip = null;
+			if (hostEntry.AddressList.Length > 0)
+			{
+				ip = hostEntry.AddressList[0];
+			}
+
+			string user = Environment.GetEnvironmentVariable("POSTGRES_USER");
+			string password = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+			string database = Environment.GetEnvironmentVariable("POSTGRES_DB");
+
+			string connectionString = $"Server={ip};Port=5432;Database={database};User Id={user};Password={password};";
+
 			silo = new SiloHostBuilder()
-				.UseLocalhostClustering()
 				.Configure<ClusterOptions>(options =>
 				{
 					options.ClusterId = "dev";
 					options.ServiceId = "game";
 				})
-				.Configure<EndpointOptions>(options => options.AdvertisedIPAddress = IPAddress.Loopback)
-				.ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(GameGrain).Assembly).WithReferences())
-				.ConfigureLogging(logging => logging.AddConsole())
+				.UseAdoNetClustering(options =>
+				{
+				options.ConnectionString = connectionString;
+				options.Invariant = "Npgsql";
+				})
+				.ConfigureEndpoints(siloPort: 11111, gatewayPort: 30000)
+				.ConfigureLogging(builder => builder.SetMinimumLevel(LogLevel.Warning).AddConsole())
 				// PubSubStore is a special store that manages pub sub of streams
 				// For development memory is used however it should be moved to a persistent
 				// data store in production.

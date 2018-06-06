@@ -1,0 +1,19 @@
+FROM microsoft/dotnet:2.1-sdk as build-env
+WORKDIR /app
+
+COPY GrainImplementations ./GrainImplementations
+COPY GrainInterfaces ./GrainInterfaces
+COPY Server ./Server
+
+WORKDIR /app/Server
+
+RUN dotnet restore
+RUN dotnet publish -c Release -o out
+
+FROM microsoft/dotnet:2.1-aspnetcore-runtime-alpine
+WORKDIR /app
+COPY --from=build-env /app/Server/out .
+
+EXPOSE 30000/tcp
+
+ENTRYPOINT ["dotnet", "Server.dll"]
