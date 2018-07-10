@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Streams;
 
-using GrainInterfaces.GameAction;
-using GrainInterfaces.GameAction.Messages;
-using GrainInterfaces.GameState;
+using GrainInterfaces.Game;
+using GrainInterfaces.Game.Messages;
+using GrainInterfaces.Game.Messages.Actions;
 
 namespace GrainImplementations
 {
@@ -19,7 +19,7 @@ namespace GrainImplementations
 
 		private IGameState state;
 
-		private Dictionary<Type, Func<GameActionMessage, Task>> handlers;
+		private Dictionary<Type, Func<GameMessage, Task>> handlers;
 
 		public GameActionMessageHandlerGrain(ILogger<GameGrain> logger)
 		{
@@ -33,14 +33,14 @@ namespace GrainImplementations
 			// Get game state for this game
 			state = GrainFactory.GetGrain<IGameState>(gameId);
 
-			handlers = new Dictionary<Type, Func<GameActionMessage, Task>>();
+			handlers = new Dictionary<Type, Func<GameMessage, Task>>();
 
 			BuildHandlers(handlers);
 
 			return base.OnActivateAsync();
 		}
 
-		public async Task ProcessMessage(GameActionMessage message)
+		public async Task ProcessMessage(GameMessage message)
 		{
 			Type type = message.GetType();
 			if (!handlers.ContainsKey(type))
@@ -49,13 +49,13 @@ namespace GrainImplementations
 				return;
 			}
 
-			Func<GameActionMessage, Task> handler = handlers[type];
+			Func<GameMessage, Task> handler = handlers[type];
 			await handler(message);
 
 			this.logger.LogInformation($"GameActionMessage Processed: {message}");
 		}
 
-		private void BuildHandlers(Dictionary<Type, Func<GameActionMessage, Task>> handlers)
+		private void BuildHandlers(Dictionary<Type, Func<GameMessage, Task>> handlers)
 		{
 			handlers.Add(typeof(MoveMessage), async (msg) => await state.PlayerMove(msg));
 			handlers.Add(typeof(ShootMessage), async (msg) => await state.PlayerShoot(msg));

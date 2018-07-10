@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Orleans;
 
 using GrainInterfaces.Player;
-using GrainInterfaces.GameAction.Messages;
+using GrainInterfaces.Game.Messages;
 
 namespace GrainInterfaces.Game
 {
@@ -17,6 +17,6 @@ namespace GrainInterfaces.Game
 		// Leave the game as a player
 		Task Leave(IPlayer player);
 
-		Task ProcessActionMessage(IPlayer player, GameActionMessage message);
+		Task ProcessActionMessage(IPlayer player, GameMessage message);
 	}
 }

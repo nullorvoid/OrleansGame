@@ -9,8 +9,7 @@ using Orleans.Streams;
 
 using GrainInterfaces.Game;
 using GrainInterfaces.Game.Messages;
-using GrainInterfaces.GameAction;
-using GrainInterfaces.GameAction.Messages;
+using GrainInterfaces.Game.Messages.Setup;
 using GrainInterfaces.Player;
 
 namespace GrainImplementations
@@ -38,7 +37,7 @@ namespace GrainImplementations
 
 			// Get game stream with no namespace for general messages
 			IStreamProvider streamProvider = GetStreamProvider("GameStream");
-			stream = streamProvider.GetStream<GameMessage>(gameId, null);
+			stream = streamProvider.GetStream<GameMessage>(gameId, "game");
 
 			// Get game message handler which will interface with the state
 			actionMessageHandler = GrainFactory.GetGrain<IGameActionMessageHandler>(gameId);
@@ -64,7 +63,7 @@ namespace GrainImplementations
 			await stream.OnNextAsync(new PlayerJoinedMessage() { PlayerId = player.GetPrimaryKeyString() });
 		}
 
-		public async Task ProcessActionMessage(IPlayer player, GameActionMessage message)
+		public async Task ProcessActionMessage(IPlayer player, GameMessage message)
 		{
 			await actionMessageHandler.ProcessMessage(message);
 		}

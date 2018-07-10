@@ -9,24 +9,24 @@ using Microsoft.Extensions.Logging;
 using Orleans.Streams;
 
 using GrainInterfaces.Game.Messages;
-using GrainInterfaces.Game.Messages.Setup;
+using GrainInterfaces.Game.Messages.Actions;
 
 namespace Client.Observers
 {
-	public class GameStreamObserver : IAsyncObserver<GameMessage>
+	public class GameStreamActionObserver : IAsyncObserver<GameMessage>
 	{
 		private ILogger logger;
 
 		private Dictionary<Type, Action<GameMessage>> handlers;
 
-		public GameStreamObserver(ILogger logger)
+		public GameStreamActionObserver(ILogger logger)
 		{
 			this.logger = logger;
 
 			handlers = new Dictionary<Type, Action<GameMessage>>();
 
-			handlers.Add(typeof(PlayerJoinedMessage), (msg) => HandleJoinMessage(msg));
-			handlers.Add(typeof(PlayerLeftMessage), (msg) => HandleLeftMessage(msg));
+			handlers.Add(typeof(MoveMessage), (msg) => HandleMoveMessage(msg));
+			handlers.Add(typeof(ShootMessage), (msg) => HandleShootMessage(msg));
 		}
 
 		public Task OnCompletedAsync()
@@ -46,7 +46,7 @@ namespace Client.Observers
 			Type type = item.GetType();
 			if (!handlers.ContainsKey(type))
 			{
-				this.logger.LogInformation($"GameStreamObserver message type not recognised");
+				this.logger.LogInformation($"GameStreamActionObserver message type not recognised");
 				// TODO: Update this with suitable error handles
 				return Task.CompletedTask;
 			}
@@ -58,16 +58,16 @@ namespace Client.Observers
 			return Task.CompletedTask;
 		}
 
-		private void HandleJoinMessage(GameMessage msg)
+		private void HandleMoveMessage(GameMessage msg)
 		{
-			PlayerJoinedMessage joinMsg = msg as PlayerJoinedMessage;
-			this.logger.LogInformation($"{joinMsg.PlayerId} joined the server");
+			MoveMessage moveMsg = msg as MoveMessage;
+			this.logger.LogInformation($"{moveMsg.PlayerId} moved in direction {moveMsg.Direction}");
 		}
 
-		private void HandleLeftMessage(GameMessage msg)
+		private void HandleShootMessage(GameMessage msg)
 		{
-			PlayerLeftMessage leftMsg = msg as PlayerLeftMessage;
-			this.logger.LogInformation($"{leftMsg.PlayerId} left the server");
+			ShootMessage shootMsg = msg as ShootMessage;
+			this.logger.LogInformation($"{shootMsg.PlayerId} shot in direction {shootMsg.Direction}");
 		}
 	}
 }
